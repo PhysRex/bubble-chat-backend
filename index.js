@@ -49,6 +49,14 @@ fs.readFile('creds.json', 'utf-8', function (err, data) {
 var port = process.env.PORT || 8080;
 console.log('port: ', port);
 
+
+// Store people in chat
+var users = [];
+
+// Store messages in chat
+var messages = [];
+
+
 // Socket Connection
 // here you can start emitting events to the client 
 io.on('connection', (client) => {
@@ -71,14 +79,24 @@ io.on('connection', (client) => {
         timeZoneName: 'short',
       }
       const date = new Date().toLocaleDateString('en-US', options);
-      console.log('date: ', date);
+      // console.log('date: ', date);
       client.emit('timer', date);
     }, interval);
   });
 
 
   // Fire 'send' event for updating Message list in UI
-  client.on('message', data => io.emit('send', data));
+  client.on('message', (data) => {
+    console.log('RECEIVED: msg sent: ', data)
+    messages.push(data);
+    io.emit('send', data);
+  });
+
+  // send all messages back to front-end
+  client.on('get_messages', () => {
+    console.log('RECEIVED: get_messages request: ');
+    io.emit('message_history', messages);
+  });
 
   // Fire 'count_users' for updating user count in UI
   client.on('update_user_count', data => io.emit('count_users', data));
