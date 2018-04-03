@@ -3,7 +3,6 @@
  * based on: https://dzone.com/articles/using-redis-with-nodejs-and-socketio
  */
 
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
@@ -46,15 +45,22 @@ fs.readFile('creds.json', 'utf-8', function (err, data) {
     });
 });
 */
-var port = process.env.PORT || 8080;
+const port = process.env.PORT || 8080;
 console.log('port: ', port);
 
 
 // Store people in chat
-var users = [];
+const users = [];
 
 // Store messages in chat
-var messages = [];
+const messages = [];
+
+// get quotes
+let quotes = [];
+fs.readFile('quotes.json', 'utf8', function (err, data) {
+  if (err) throw err;
+  quotes = JSON.parse(data);
+});
 
 
 // Socket Connection
@@ -85,6 +91,22 @@ io.on('connection', (client) => {
   });
 
 
+  // Fire 'send' event for updating users list
+  client.on('get_users', (data) => {
+    console.log('RECEIVED: msg sent: ', data)
+    messages.push(data);
+    io.emit('joined', data);
+  });
+
+  // when user joins chat
+  client.on('join', (data) => {
+    console.log('RECEIVED: request to join chat: ');
+    users.push(data);
+    io.emit('joined', users);
+  });
+
+
+
   // Fire 'send' event for updating Message list in UI
   client.on('message', (data) => {
     console.log('RECEIVED: msg sent: ', data)
@@ -99,7 +121,13 @@ io.on('connection', (client) => {
   });
 
   // Fire 'count_users' for updating user count in UI
-  client.on('update_user_count', data => io.emit('count_users', data));
+  // client.on('update_user_count', data => io.emit('count_users', data));
+
+  // Fire 'count_users' for updating user count in UI
+  client.on('get_quote', () => {
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+    io.emit('random_quote', randomQuote);
+  });
 
 
   // When client disconnects
