@@ -14,37 +14,37 @@ const fs = require('fs');
 let creds = '';
 
 const redis = require('redis');
-let client = '';
+let redisClient = '';
 
 // Read credentials from JSON
-/*
-fs.readFile('creds.json', 'utf-8', function (err, data) {
-    if (err) throw err;
-    creds = JSON.parse(data);
-    client = redis.createClient('redis://' + creds.user + ':' + creds.password + '@' + creds.host + ':' + creds.port);
+fs.readFile('creds.json', 'utf-8', (err, data) => {
+  if (err) throw err;
+  creds = JSON.parse(data);
+  redisClient = redis.createClient(`http://${creds.host}:${creds.port}`);
+  // redisClient = redis.createClient('redis://' + creds.user + ':' + creds.password + '@' + creds.host + ':' + creds.port);
 
-    // Redis Client Ready
-    client.once('ready', function () {
+  // Redis redis client Ready
+  redisClient.once('ready',  () => {
+    console.log('REDIS CLIENT READY!!');
+    // Flush Redis DB
+    // redisClient.flushdb();
 
-        // Flush Redis DB
-        // client.flushdb();
-
-        // Initialize Chatters
-        client.get('chat_users', function (err, reply) {
-            if (reply) {
-                chatters = JSON.parse(reply);
-            }
-        });
-
-        // Initialize Messages
-        client.get('chat_app_messages', function (err, reply) {
-            if (reply) {
-                chat_messages = JSON.parse(reply);
-            }
-        });
+    // Initialize Chatters
+    redisClient.get('users', (err, reply) => {
+      if (reply) {
+        chatters = JSON.parse(reply);
+      }
     });
+
+    // Initialize Messages
+    redisClient.get('messages', (err, reply) => {
+      if (reply) {
+        chat_messages = JSON.parse(reply);
+      }
+    });
+  });
 });
-*/
+
 const port = process.env.PORT || 8080;
 console.log('port: ', port);
 
@@ -102,6 +102,7 @@ io.on('connection', (client) => {
   client.on('join', (data) => {
     console.log('RECEIVED: request to join chat: ');
     users.push(data);
+    redisClient.set('users', JSON.stringify(users));
     io.emit('joined', users);
   });
 
@@ -111,6 +112,7 @@ io.on('connection', (client) => {
   client.on('message', (data) => {
     console.log('RECEIVED: msg sent: ', data)
     messages.push(data);
+    redisClient.set('users', JSON.stringify(messages));
     io.emit('send', data);
   });
 
@@ -147,18 +149,6 @@ console.log('  >> listening on port ', port);
 
 
 /*
-
-// Start the Server
-http.listen(port, function () {
-    console.log('Server Started. Listening on *:' + port);
-});
-
-// Store people in chatroom
-var chatters = [];
-
-// Store messages in chatroom
-var chat_messages = [];
-
 // Express Middleware
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({

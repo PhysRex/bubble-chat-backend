@@ -4,7 +4,8 @@
   "description": "an online chat server",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "IP=0.0.0.0 PORT=3030 mocha --timeout 5000 tests/*_test.js",
+    "test2": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index.js"
   },
   "repository": {
@@ -22,7 +23,14 @@
     "express": "^4.16.3",
     "expressjs": "^1.0.1",
     "redis": "^2.8.0",
-    "socket.io": "^2.1.0"
+    "socket.io": "^2.1.0",
+    "chai": "^3.5.0",
+    "chai-http": "^2.0.1",
+    "ejs": "^2.4.1",
+    "mocha": "^2.4.5",
+    "mongodb": "^2.1.16",
+    "morgan": "^1.7.0",
+    "object-assign":"4.1.0"
   },
   "devDependencies": {
     "nodemon": "^1.17.3"
