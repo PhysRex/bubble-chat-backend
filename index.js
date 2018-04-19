@@ -45,7 +45,7 @@ fs.readFile('creds.json', 'utf-8', (err, data) => {
   });
 });
 */
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 console.log('port: ', port);
 
 
