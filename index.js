@@ -6,16 +6,16 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
-// const http = require('http').Server(app);
+const http = require('http').Server(app);
 
-const io = require('socket.io')();
+const io = require('socket.io')(http);
 
 const fs = require('fs');
 let creds = '';
 
 const redis = require('redis');
 let redisClient = '';
-
+/*
 // Read credentials from JSON
 fs.readFile('creds.json', 'utf-8', (err, data) => {
   if (err) throw err;
@@ -44,8 +44,8 @@ fs.readFile('creds.json', 'utf-8', (err, data) => {
     });
   });
 });
-
-const port = process.env.PORT || 8080;
+*/
+const port = process.env.PORT || 3001;
 console.log('port: ', port);
 
 
@@ -93,16 +93,16 @@ io.on('connection', (client) => {
 
   // Fire 'send' event for updating users list
   client.on('get_users', (data) => {
-    console.log('RECEIVED: msg sent: ', data)
+    console.log('\n  >> RECEIVED: msg sent:\n', data)
     messages.push(data);
     io.emit('joined', data);
   });
 
   // when user joins chat
   client.on('join', (data) => {
-    console.log('RECEIVED: request to join chat: ');
+    console.log(`\n  >> RECEIVED: ${data.userName} wants to join chat`);
     users.push(data);
-    redisClient.set('users', JSON.stringify(users));
+    // redisClient.set('users', JSON.stringify(users));
     io.emit('joined', users);
   });
 
@@ -110,15 +110,15 @@ io.on('connection', (client) => {
 
   // Fire 'send' event for updating Message list in UI
   client.on('message', (data) => {
-    console.log('RECEIVED: msg sent: ', data)
+    console.log('\n  >> RECEIVED: msg sent: ', data)
     messages.push(data);
-    redisClient.set('users', JSON.stringify(messages));
+    // redisClient.set('users', JSON.stringify(messages));
     io.emit('send', data);
   });
 
   // send all messages back to front-end
   client.on('get_messages', () => {
-    console.log('RECEIVED: get_messages request: ');
+    console.log('\n  >> RECEIVED: get_messages request: ');
     io.emit('message_history', messages);
   });
 
@@ -139,7 +139,7 @@ io.on('connection', (client) => {
 });
 
 // tell socket.io to start listening for clients
-io.listen(port);
+// io.listen(port);
 console.log('  >> listening on port ', port);
   
   
@@ -148,12 +148,15 @@ console.log('  >> listening on port ', port);
 
 
 
-/*
 // Express Middleware
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+
+http.listen(port, () => {
+  console.log('Server stared, listening on *:', port);
+});
 
 // Render Main HTML file
 app.get('/', function (req, res) {
@@ -161,6 +164,8 @@ app.get('/', function (req, res) {
         root: __dirname
     });
 });
+
+/*
 
 // API - Join Chat
 app.post('/join', function (req, res) {

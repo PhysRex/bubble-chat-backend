@@ -1,9 +1,0 @@
-name: bubble-chat-backend
-version: 1.0.0
-description: An example Node.js application with no database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/nodejs-ex/blob/master/README.md.
-keywords:
-- quickstart
-- nodejs
-home: https://access.redhat.com
-sources:
-- https://github.com/PhysRex/bubble-chat-backend
