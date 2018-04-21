@@ -45,9 +45,9 @@ fs.readFile('creds.json', 'utf-8', (err, data) => {
   });
 });
 */
-const port = process.env.PORT || 3000;
-console.log('port: ', port);
 
+// Setting PORT
+const port = process.env.PORT || 3001;
 
 // Store people in chat
 const users = [];
@@ -92,16 +92,15 @@ io.on('connection', (client) => {
 
 
   // Fire 'send' event for updating users list
-  client.on('get_users', (data) => {
-    console.log('\n  >> RECEIVED: msg sent:\n', data)
-    messages.push(data);
-    io.emit('joined', data);
+  client.on('get_users', () => {
+    console.log('\n  >> RECEIVED: request to get users\n');
+    io.emit('joined', users);
   });
 
   // when user joins chat
   client.on('join', (data) => {
     console.log(`\n  >> RECEIVED: ${data.userName} wants to join chat`);
-    users.push(data);
+    users.push(data.userName);
     // redisClient.set('users', JSON.stringify(users));
     io.emit('joined', users);
   });
