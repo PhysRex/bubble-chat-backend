@@ -5,6 +5,8 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const firebase = require('firebase');
+
 const app = express();
 const http = require('http').Server(app);
 
@@ -46,14 +48,98 @@ fs.readFile('creds.json', 'utf-8', (err, data) => {
 });
 */
 
+
+// Initialize Firebase
+const config = {
+  apiKey: "AIzaSyB13syX3MsNSxUInj7MXK6k3pSarFQGeVE",
+  authDomain: "hacker-server-ba38f.firebaseapp.com",
+  databaseURL: "https://hacker-server-ba38f.firebaseio.com",
+  projectId: "hacker-server-ba38f",
+  storageBucket: "hacker-server-ba38f.appspot.com",
+  messagingSenderId: "478308021851"
+};
+firebase.initializeApp(config);
+const database = firebase.database();
+// const databaseRef = firebase.database().ref('users/'+userId);
+
+// async function postData(data, ref) { 
+  // Get a key for a new Post.
+  // var newPostKey = firebase.database().ref().child('posts').push().key;
+
+  // Write the new post's data simultaneously in the posts list and the user's post list.
+  // var updates = {};
+  // updates['/posts/' + newPostKey] = data;
+  // updates[ref + '/' + newPostKey] = data;
+  // updates['/user-posts/' + uid + '/' + newPostKey] = data;
+
+  // return firebase.database().ref(ref).update(data);
+// }
+/*
+database.ref('users').set({
+  online: [
+    { 
+      name: 'dev',
+      password: '',
+      imgURL: '',
+    }, { 
+      name: 'guy',
+      password: '',
+      imgURL: '',
+    }, { 
+      name: 'pal',
+      password: '',
+      imgURL: '',
+    }
+  ],
+  offline: [
+    { 
+      name: 'leo',
+      password: '',
+      imgURL: '',
+    }, { 
+      name: 'don',
+      password: '',
+      imgURL: '',
+    }, { 
+      name: 'raf',
+      password: '',
+      imgURL: '',
+    }
+  ]
+});
+*/
+
+// retrieve data from firebase database
+let users;
+let messages;
+database.ref('users/online').once('value', (snapshot) => {
+  console.log('snapshot key:', snapshot.key);
+  console.log('snapshot val:', snapshot.val());
+  console.log('snapshot users:', snapshot.val().users);
+
+  // Store people in chat
+  users = snapshot.val() || [];
+});
+
+database.ref('messages').once('value', (snapshot) => {
+  console.log('snapshot key:', snapshot.key);
+  console.log('snapshot val:', snapshot.val());
+  console.log('snapshot users:', snapshot.val().users);
+
+  // Store messages in chat
+  messages = snapshot.val() || [];
+});
+
+const testing = database.ref().child('users').once('value').then( (snap) => {
+  return snap;
+});
+
+// database.ref().child('users').once('value').then( (snap) => {
+  
+// });
+
 // Setting PORT
 const port = process.env.PORT || 3001;
-
-// Store people in chat
-const users = [];
-
-// Store messages in chat
-const messages = [];
 
 // get quotes
 let quotes = [];
@@ -99,26 +185,33 @@ io.on('connection', (client) => {
 
   // when user joins chat
   client.on('join', (data) => {
-    console.log(`\n  >> RECEIVED: ${data.userName} wants to join chat`);
-    users.push(data.userName);
+    console.log('#####################################');
+    console.log('data', data);
+    console.log('users', users);
+    console.log('#####################################');
+    console.log(`\n  >> RECEIVED: ${data.name} wants to join chat`);
+    users.push(data);
     // redisClient.set('users', JSON.stringify(users));
-    io.emit('joined', users);
+    database.ref('users/online').set(users);
+    // postData(data, 'users/online');
+    io.emit('joined', users);    
   });
 
 
+
+  // send all messages back to front-end
+  client.on('get_messages', () => {
+    console.log('\n  >> RECEIVED: get_messages request: ');
+    io.emit('message_history', messages);
+  });
 
   // Fire 'send' event for updating Message list in UI
   client.on('message', (data) => {
     console.log('\n  >> RECEIVED: msg sent: ', data)
     messages.push(data);
     // redisClient.set('users', JSON.stringify(messages));
+    database.ref('messages').set(messages);
     io.emit('send', data);
-  });
-
-  // send all messages back to front-end
-  client.on('get_messages', () => {
-    console.log('\n  >> RECEIVED: get_messages request: ');
-    io.emit('message_history', messages);
   });
 
   // Fire 'count_users' for updating user count in UI
@@ -132,7 +225,8 @@ io.on('connection', (client) => {
 
 
   // When client disconnects
-  client.on('disconnect', () => {
+  client.on('disconnect', (data) => {
+    console.log('  >> disconnected: ', data);
     console.log('User disconnected :(');
   })
 });
